@@ -1,0 +1,15 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from service_define/srv/StringForString.srv
+// generated code does not contain a copyright notice
+
+
+module service_define {
+  module srv {
+    struct StringForString_Request {
+      string data;
+    };
+    struct StringForString_Response {
+      string data;
+    };
+  };
+};
