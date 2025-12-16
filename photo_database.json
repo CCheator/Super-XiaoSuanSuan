@@ -1,0 +1,17 @@
+{
+    "蔡浩楠":[
+        "./photo_database/chn0.jpg",
+        "./photo_database/chn1.jpg",
+        "./photo_database/chn2.jpg",
+        "./photo_database/chn3.jpg",
+        "./photo_database/chn4.jpg"
+    ],
+    "霍炘玙":[
+        "./photo_database/hxy0.jpg",
+        "./photo_database/hxy1.jpg"
+    ],
+    "科比·布莱恩特":[
+        "./photo_database/kobe0.jpg",
+        "./photo_database/kobe1.jpg"
+    ]
+}
