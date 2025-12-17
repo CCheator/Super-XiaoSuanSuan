@@ -66,6 +66,12 @@ class TalkNode(Node):
             self.tts_life_callback,
             10
         )
+        self.face_sub = self.create_subscription(
+            String,
+            '/face_recognition_result',
+            self.face_callback,
+            10
+        )
 
         self.tts_client = self.create_client(SetString, 'tts_service_wait')
         self.get_logger().info('Waiting for tts_service_wait...')
@@ -92,26 +98,22 @@ class TalkNode(Node):
         self.get_logger().info(f"ASR heard: {text}")
 
         with self.lock:
-            # Wake word always has priority
             if self.wake_word in text and self.active == False:
                 self.activate()
                 return
 
-            # If not active, ignore normal speech
             if self.active == False:
                 return
 
-            # Active dialogue
             self.last_active_time = time.time()
 
-        # Process dialogue outside lock
         reply = call_llm_api(text)
         self.speak(reply)
 
     # =====================
     # State management
     # =====================
-    def activate(self):
+    def activate(self, greeting="你好"):
         """Activate dialogue mode and greet."""
         if not self.active:
             self.get_logger().info('Wake word detected. Activating dialogue.')
@@ -120,7 +122,7 @@ class TalkNode(Node):
 
         self.active = True
         self.last_active_time = time.time()
-        self.speak('你好')
+        self.speak(greeting)
 
     def deactivate(self):
         """Return to standby mode."""
@@ -159,6 +161,26 @@ class TalkNode(Node):
 
         future = self.tts_client.call_async(req)
         future.add_done_callback(self.tts_done_callback)
+
+    # =====================
+    # Face Recognize
+    # =====================
+    def face_callback(self, msg: String):
+        if self.tts_speaking:
+            return
+
+        recognized_person = msg.data.strip()
+        self.get_logger().info(f"Recognized face: {recognized_person}")
+        print((f"Recognized face: {recognized_person}"))
+
+        with self.lock:
+            # 如果已激活，重置计时器即可
+            if self.active:
+                self.last_active_time = time.time()
+                return
+
+            # 未激活状态下，通过人脸唤醒
+            self.activate(greeting=f"你好，{recognized_person}")
 
 
 # =====================
