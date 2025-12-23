@@ -11,6 +11,8 @@ from service_define.srv import SetString
 import os
 from openai import OpenAI
 
+chat_histroy = []
+
 # =====================
 # LLM API (示例实现)
 # =====================
@@ -27,8 +29,8 @@ def call_llm_api(user_text: str) -> str:
     completion = client.chat.completions.create(
         model="qwen3-max",
         messages=[
-            {"role": "system", "content": "你是小算算，是一个能够进行语言交流的助手。根据用户的说的话进行回复，回复要尽量简洁，并且回复里不要出现语言文字和标点之外的符号。"},
-            {"role": "user", "content": user_text},
+            {"role": "system", "content": "你是小算算，是一个能够进行语言交流的助手。根据用户的说的话以及近期和用户的对话历史（可能没有历史对话）进行回复，回复要尽量简洁，并且回复里不要出现语言文字和标点之外的符号。"},
+            {"role": "user", "content": user_text + "  对话历史：" + "".join(chat_histroy)},
         ],
         stream=True
     )
@@ -36,6 +38,11 @@ def call_llm_api(user_text: str) -> str:
     for chunk in completion:
         print(chunk.choices[0].delta.content, end="", flush=True)
         reply += chunk.choices[0].delta.content
+    
+    chat_histroy.append("用户：" + user_text + "  回答：" + reply)
+    if len(chat_histroy) > 10:
+        chat_histroy.pop(0)
+
     return reply
 
 
@@ -44,7 +51,7 @@ class TalkNode(Node):
         super().__init__('talk_node')
 
         # ---- parameters ----
-        self.wake_word = '你好'
+        self.wake_word = '小算算'
         self.standby_timeout = 120.0
 
         # ---- state ----
@@ -91,7 +98,6 @@ class TalkNode(Node):
             return 
 
         text = msg.data.strip()
-        self.tts_speaking = True
         if not text:
             return
 
@@ -107,6 +113,7 @@ class TalkNode(Node):
 
             self.last_active_time = time.time()
 
+        self.tts_speaking = True
         reply = call_llm_api(text)
         self.speak(reply)
 
@@ -116,9 +123,7 @@ class TalkNode(Node):
     def activate(self, greeting="你好"):
         """Activate dialogue mode and greet."""
         if not self.active:
-            self.get_logger().info('Wake word detected. Activating dialogue.')
-        else:
-            self.get_logger().info('Wake word detected. Already active, resetting timer.')
+            self.get_logger().info('Activating dialogue.')
 
         self.active = True
         self.last_active_time = time.time()
@@ -170,9 +175,6 @@ class TalkNode(Node):
             return
 
         recognized_person = msg.data.strip()
-        self.get_logger().info(f"Recognized face: {recognized_person}")
-        print((f"Recognized face: {recognized_person}"))
-
         with self.lock:
             # 如果已激活，重置计时器即可
             if self.active:
@@ -181,6 +183,10 @@ class TalkNode(Node):
 
             # 未激活状态下，通过人脸唤醒
             self.activate(greeting=f"你好，{recognized_person}")
+            self.get_logger().info(f"Recognized face: {recognized_person}")
+            print((f"Recognized face: {recognized_person}"))
+
+        
 
 
 # =====================

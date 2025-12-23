@@ -1,0 +1,1 @@
+python orbbec/get_rgbd.py --record_frames 250 --dir_name drawer4
