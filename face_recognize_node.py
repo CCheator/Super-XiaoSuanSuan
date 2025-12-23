@@ -14,7 +14,7 @@ from std_msgs.msg import String
 # 配置
 # =========================
 address = "udp://localhost:5000"
-db_json_path = "./photo_database.json"
+db_json_path = "data/photo_database.json"
 MODEL_NAME = "VGG-Face"
 SIM_THRESHOLD = 0.5   # 提高阈值，避免误唤醒
 DETECTION_INTERVAL = 1.0  # 检测间隔（秒）
@@ -89,7 +89,7 @@ class FaceRecognitionNode(Node):
             return
 
         # 保存临时帧用于识别
-        temp_img_path = "temp_frame.jpg"
+        temp_img_path = "data/temp_frame.jpg"
         cv2.imwrite(temp_img_path, frame)
 
         # 提取当前人脸特征
